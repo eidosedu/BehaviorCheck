@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="theme-color" id="meta-theme-color" content="#FF9800">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" id="meta-apple-status" content="#FF9800">
+    <title>BehaviorCheck</title>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <style>
+        :root { 
+            --primary: #FF9800; /* Padrão Laranja */
+            --primary-dark: #F57C00; 
+            --primary-light: #FFE0B2;
+            --bg: #ffffff; 
+            --text: #333; 
+            --danger: #f44336; 
+            --success: #4CAF50; 
+            --gray: #f5f5f5; 
+        }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { font-family: 'Roboto', sans-serif; margin: 0; background-color: var(--bg); color: var(--text); overflow: hidden; display: flex; flex-direction: column; height: 100vh; }
+
+        header { 
+            background: var(--primary); color: white; padding: 16px 20px; 
+            display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2); z-index: 20; flex-shrink: 0; transition: background 0.3s;
+        }
+        header h1 { margin: 0; font-size: 1.4rem; font-weight: bold; letter-spacing: 1px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+        header h1:active { opacity: 0.8; }
+        .header-icons { display: flex; gap: 15px; align-items: center; }
+        .header-icons .material-icons { cursor: pointer; font-size: 1.8rem; padding: 5px; border-radius: 50%; transition: background 0.2s; }
+        .header-icons .material-icons:active { background: rgba(255,255,255,0.2); }
+
+        /* TABELA E GRID */
+        .table-container { flex: 1; overflow: auto; position: relative; background: #FAFAFA; }
+        table { border-collapse: separate; border-spacing: 0; width: 100%; min-width: 600px; }
+        
+        th, td { padding: 0; margin: 0; border-bottom: 1px solid #E0E0E0; border-right: 1px solid #E0E0E0; background: white; text-align: center; }
+        
+        /* Cabeçalho Fixo no Topo */
+        th { 
+            position: sticky; top: 0; background: var(--primary-dark); color: white; 
+            z-index: 10; font-size: 1.1rem; padding: 15px 5px; font-weight: bold;
+            box-shadow: 0 2px 2px rgba(0,0,0,0.1); transition: background 0.3s;
+        }
+        
+        /* Primeira Coluna Fixa à Esquerda */
+        th:first-child, td:first-child { 
+            position: sticky; left: 0; z-index: 11; width: 240px; min-width: 240px; max-width: 240px; 
+            text-align: left; padding: 0 15px; border-right: 2px solid #ccc;
+        }
+        th:first-child { z-index: 12; background: var(--primary-dark); }
+        td:first-child { background: white; font-weight: bold; font-size: 1.1rem; color: #424242; }
+
+        .student-name-cell { cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: space-between; height: 65px; }
+        .student-name-cell:active { background: #E0E0E0; }
+        .student-name-cell .material-icons { font-size: 1.2rem; color: #9E9E9E; }
+
+        /* Botões das Células */
+        .cell-btn { 
+            width: 100%; height: 65px; border: none; background: transparent; 
+            font-size: 1.5rem; font-weight: bold; color: var(--primary-dark); 
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .cell-btn:active { background: var(--primary-light); }
+        .cell-btn.has-count { background: var(--primary-light); }
+
+        .rule-header { cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; width: 100%; height: 100%; }
+        .rule-header:active { opacity: 0.8; }
+
+        /* FAB */
+        .fab {
+            position: fixed; bottom: 30px; right: 30px;
+            background: var(--primary); color: white;
+            width: 65px; height: 65px; border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3); border: none; z-index: 30; cursor: pointer; transition: background 0.3s;
+        }
+        .fab .material-icons { font-size: 2rem; }
+
+        /* MODAIS */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); display: none; align-items: center; justify-content: center; z-index: 100; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 450px; max-height: 90vh; overflow-y: auto; display: flex; flex-direction: column; box-shadow: 0 10px 25px rgba(0,0,0,0.2); }
+        
+        .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+        .modal-header h2 { margin: 0; color: var(--primary-dark); font-size: 1.4rem; transition: color 0.3s; }
+        .modal-header .material-icons { cursor: pointer; color: #757575; }
+
+        input, textarea { width: 100%; padding: 15px; margin-bottom: 15px; border: 2px solid #E0E0E0; border-radius: 8px; font-size: 1.1rem; outline: none; background: #FAFAFA; }
+        input:focus, textarea:focus { border-color: var(--primary); background: white; }
+        
+        .btn-action { background: var(--primary); color: white; border: none; padding: 15px; border-radius: 8px; width: 100%; font-size: 1rem; font-weight: bold; cursor: pointer; margin-top: 10px; display: flex; justify-content: center; align-items: center; gap: 8px; transition: background 0.3s; }
+        .btn-action:active { opacity: 0.8; }
+        .btn-danger { background: white; color: var(--danger); border: 2px solid var(--danger); }
+        .btn-success { background: var(--success); }
+        
+        .rule-details { background: var(--primary-light); padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid var(--primary); transition: all 0.3s; }
+        .rule-details h4 { margin: 0 0 5px 0; color: var(--primary-dark); }
+        .rule-details p { margin: 0; font-size: 0.95rem; color: #555; line-height: 1.4; }
+
+        #report-text { background: #f9f9f9; padding: 15px; font-family: monospace; font-size: 0.9rem; border: 1px solid #ddd; line-height: 1.5; color: #000; height: 200px; }
+
+        .edit-count-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #EEEEEE; }
+        .edit-count-row:last-child { border-bottom: none; }
+        .edit-count-controls { display: flex; align-items: center; gap: 12px; }
+        .btn-circle { width: 36px; height: 36px; border-radius: 50%; border: none; background: #E0E0E0; color: #333; font-size: 1.4rem; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .btn-circle:active { background: #BDBDBD; }
+
+        .help-item { text-align: left; margin-bottom: 12px; padding: 12px; background: #F1F5F9; border-radius: 8px; }
+        .help-item strong { display: block; color: var(--primary-dark); margin-bottom: 4px; font-size: 0.95rem; }
+        .help-item p { font-size: 0.85rem; color: #475569; line-height: 1.4; margin: 0; }
+
+        /* Estilos do Color Picker */
+        .theme-selector { display: flex; gap: 15px; margin-bottom: 20px; justify-content: center; }
+        .theme-circle { width: 45px; height: 45px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; box-shadow: 0 2px 5px rgba(0,0,0,0.2); transition: transform 0.2s; }
+        .theme-circle:active { transform: scale(0.9); }
+        .theme-circle.active { border-color: #333; transform: scale(1.1); }
+        .bg-orange { background: #FF9800; }
+        .bg-green { background: #4CAF50; } 
+        .bg-cyan { background: #00BCD4; } 
+        
+        .lbl-title { font-weight: bold; font-size: 0.9rem; color: #555; display: block; margin-bottom: 5px; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>
+        <span class="material-icons title-icon" onclick="abrirConfiguracoes()" title="Configurações">fact_check</span> 
+        <span class="title-text" onclick="abrirAjuda()" title="Tutorial e Ajuda">BehaviorCheck</span>
+    </h1>
+    <div class="header-icons">
+        <span class="material-icons" onclick="abrirModalRegra()" title="Adicionar Regra">add_task</span>
+        <span class="material-icons" onclick="gerarRelatorioGeral()" title="Relatório Geral">assignment</span>
+        <span class="material-icons" onclick="resetGeral()" title="Resetar Tudo">delete_forever</span>
+    </div>
+</header>
+
+<div class="table-container">
+    <table id="main-table">
+        <thead id="table-head"></thead>
+        <tbody id="table-body"></tbody>
+    </table>
+</div>
+
+<button class="fab" onclick="abrirModalAluno()"><span class="material-icons">person_add</span></button>
+
+<div id="modal-settings" class="modal-overlay" style="z-index: 250;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Configurações</h2>
+            <span class="material-icons" onclick="fecharModais()">close</span>
+        </div>
+
+        <span class="lbl-title" style="text-align: center;">Tema do App:</span>
+        <div class="theme-selector">
+            <div class="theme-circle bg-orange" id="theme-btn-orange" onclick="selecionarTemaTemp('orange')"></div>
+            <div class="theme-circle bg-green" id="theme-btn-green" onclick="selecionarTemaTemp('green')"></div>
+            <div class="theme-circle bg-cyan" id="theme-btn-cyan" onclick="selecionarTemaTemp('cyan')"></div>
+        </div>
+
+        <span class="lbl-title">Cabeçalho do Relatório Individual:</span>
+        <p style="font-size: 0.8rem; color: #666; margin: 0 0 10px 0;">Use <b>[ALUNO]</b> e <b>[DATA]</b> para o app preencher automaticamente.</p>
+        <textarea id="config-header" style="height: 100px; font-family: monospace; font-size: 0.85rem; resize: none;"></textarea>
+
+        <span class="lbl-title">Mensagem de Comportamento Excelente:</span>
+        <p style="font-size: 0.8rem; color: #666; margin: 0 0 10px 0;">O que enviar quando o aluno tiver 0 ocorrências.</p>
+        <textarea id="config-good-msg" style="height: 80px; font-family: monospace; font-size: 0.85rem; resize: none;"></textarea>
+
+        <button class="btn-action" onclick="salvarConfiguracoes()"><span class="material-icons">save</span> SALVAR CONFIGURAÇÕES</button>
+    </div>
+</div>
+
+<div id="modal-dashboard-aluno" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Painel do Aluno</h2>
+            <span class="material-icons" onclick="fecharModais()">close</span>
+        </div>
+
+        <span class="lbl-title">Editar Nome:</span>
+        <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+            <input type="text" id="edit-aluno-nome" style="margin-bottom: 0;">
+            <button class="btn-action" style="width: auto; margin-top: 0; padding: 0 15px;" onclick="salvarNomeAluno()"><span class="material-icons">save</span></button>
+        </div>
+
+        <span class="lbl-title">Corrigir Ocorrências Diárias:</span>
+        <div id="dashboard-rules-list" style="background: #FAFAFA; border: 1px solid #E0E0E0; border-radius: 8px; padding: 0 15px; max-height: 250px; overflow-y: auto; margin-bottom: 20px;"></div>
+
+        <button class="btn-action btn-success" onclick="prepararRelatorioAluno()">
+            <span class="material-icons">send</span> REVISAR E EXPORTAR
+        </button>
+        <button class="btn-action btn-danger" style="margin-top: 15px;" onclick="excluirAlunoDoDashboard()">
+            <span class="material-icons">person_remove</span> EXCLUIR ALUNO
+        </button>
+    </div>
+</div>
+
+<div id="modal-aluno" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Adicionar Alunos</h2>
+            <span class="material-icons" onclick="fecharModais()">close</span>
+        </div>
+        <p style="font-size: 0.9rem; color: #666; margin-top: 0;">Insira os nomes. Para adicionar vários de uma vez, separe por vírgula (,).</p>
+        <textarea id="input-alunos" placeholder="Ex: Miguel, Alice, João..." style="height: 120px; resize: none;"></textarea>
+        <button class="btn-action" onclick="salvarAlunos()">SALVAR ALUNOS</button>
+    </div>
+</div>
+
+<div id="modal-regra" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="modal-regra-titulo">Nova Regra</h2>
+            <span class="material-icons" onclick="fecharModais()">close</span>
+        </div>
+        <input type="hidden" id="input-regra-id">
+        <span class="lbl-title">Sigla (Para o Cabeçalho):</span>
+        <input type="text" id="input-regra-sigla" placeholder="Ex: F.A." maxlength="5">
+        
+        <span class="lbl-title">Rótulo do Comportamento:</span>
+        <input type="text" id="input-regra-rotulo" placeholder="Ex: Fora do Assento">
+        
+        <span class="lbl-title">Descrição Operacional:</span>
+        <textarea id="input-regra-desc" placeholder="Ex: Quebrar o contato dos glúteos com a cadeira por mais de 3 segundos consecutivos durante o período de instrução acadêmica, sem autorização prévia do professor." style="height: 110px; resize: none;"></textarea>
+        
+        <button class="btn-action" onclick="salvarRegra()">SALVAR REGRA</button>
+        <button class="btn-action btn-danger" id="btn-delete-rule" style="display: none;" onclick="excluirRegra()">EXCLUIR REGRA</button>
+    </div>
+</div>
+
+<div id="modal-ver-regra" class="modal-overlay">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Detalhes da Regra</h2>
+            <span class="material-icons" onclick="fecharModais()">close</span>
+        </div>
+        <div class="rule-details">
+            <h4 id="view-regra-sigla">SIGLA</h4>
+            <p style="font-weight: bold; margin-bottom: 5px; color: #333;" id="view-regra-rotulo">Rótulo</p>
+            <p id="view-regra-desc">Descrição operacional vai aqui.</p>
+        </div>
+        <button class="btn-action" onclick="editarRegraAtual()">EDITAR REGRA</button>
+    </div>
+</div>
+
+<div id="modal-relatorio" class="modal-overlay" style="z-index: 110;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2 id="relatorio-titulo">Relatório</h2>
+            <span class="material-icons" onclick="fecharRelatorio()">close</span>
+        </div>
+        <textarea id="report-text" readonly></textarea>
+        <button class="btn-action" id="btn-copy-report"><span class="material-icons">content_copy</span> COPIAR TEXTO</button>
+    </div>
+</div>
+
+<div id="modal-help" class="modal-overlay" style="z-index: 200;">
+    <div class="modal-content">
+        <h3 style="margin-bottom: 15px; margin-top: 0; color: var(--primary-dark); text-align: center;">Bem-vindo ao BehaviorCheck! 📊</h3>
+        <div class="help-item">
+            <strong>🎯 O que é isso?</strong>
+            <p>O seu painel de gestão comportamental diária inspirado no modelo CICO (Check-In/Check-Out).</p>
+        </div>
+        <div class="help-item">
+            <strong>⚙️ Personalização Total</strong>
+            <p>Clique no ícone de "Prancheta" ao lado do nome do app para mudar as cores e editar os textos dos relatórios!</p>
+        </div>
+        <div class="help-item">
+            <strong>👥 Adicionar Alunos e Regras</strong>
+            <p>Use o botão de "Pessoa" (canto inferior direito) para adicionar alunos por vírgula. Use o ícone de "Prancheta com +" (topo) para criar regras operacionais.</p>
+        </div>
+        <div class="help-item">
+            <strong>✏️ Edição e Exportação</strong>
+            <p>Clique no <b>nome do aluno</b> na tabela para corrigir contagens, editar o nome e copiar o relatório diário (o que irá zerar a tabela para o próximo dia).</p>
+        </div>
+        <button class="btn-action" style="margin-top: 10px;" onclick="fecharAjuda()">Entendi, vamos lá!</button>
+    </div>
+</div>
+
+<script>
+    // db = { students: [], rules: [], config: { theme, reportHeader, reportGoodMsg } }
+    let db = JSON.parse(localStorage.getItem('behaviorcheck_db')) || { students: [], rules: [], config: {} };
+    let currentRuleIdView = null;
+    let currentStudentId = null;
+    let temaTemporario = '';
+
+    const defaultHeader = "🗓️ *Relatório diário*\n👤 *Aluno:* [ALUNO]\n📅 *Data:* [DATA]\n\n*Registro de Ocorrências:*\n";
+    const defaultGoodMsg = "✨ Comportamento excelente! Nenhuma ocorrência registrada na pauta de hoje. Parabéns!";
+
+    function init() { 
+        if (!db.config) db.config = {};
+        if (!db.config.theme) db.config.theme = 'orange'; // Voltou pro Laranja Padrão!
+        aplicarTema(db.config.theme);
+        
+        renderTable(); 
+        if (!localStorage.getItem('behaviorcheck_help_seen')) {
+            abrirAjuda();
+        }
+    }
+    
+    function save() { localStorage.setItem('behaviorcheck_db', JSON.stringify(db)); }
+
+    /* --- CONFIGURAÇÕES E TEMAS --- */
+    function aplicarTema(theme) {
+        const root = document.documentElement;
+        let colorCode = '';
+
+        if (theme === 'cyan') {
+            root.style.setProperty('--primary', '#00BCD4');
+            root.style.setProperty('--primary-dark', '#0097A7');
+            root.style.setProperty('--primary-light', '#E0F7FA');
+            colorCode = '#00BCD4';
+        } else if (theme === 'green') {
+            root.style.setProperty('--primary', '#4CAF50');
+            root.style.setProperty('--primary-dark', '#388E3C');
+            root.style.setProperty('--primary-light', '#E8F5E9');
+            colorCode = '#4CAF50';
+        } else { // orange
+            root.style.setProperty('--primary', '#FF9800');
+            root.style.setProperty('--primary-dark', '#F57C00');
+            root.style.setProperty('--primary-light', '#FFF3E0');
+            colorCode = '#FF9800';
+        }
+
+        document.getElementById('meta-theme-color').setAttribute('content', colorCode);
+        document.getElementById('meta-apple-status').setAttribute('content', colorCode);
+    }
+
+    function abrirConfiguracoes() {
+        temaTemporario = db.config.theme || 'orange';
+        atualizarBotoesTemaUI();
+        
+        document.getElementById('config-header').value = db.config.reportHeader || defaultHeader;
+        document.getElementById('config-good-msg').value = db.config.reportGoodMsg || defaultGoodMsg;
+        
+        document.getElementById('modal-settings').style.display = 'flex';
+    }
+
+    function selecionarTemaTemp(theme) {
+        temaTemporario = theme;
+        atualizarBotoesTemaUI();
+    }
+
+    function atualizarBotoesTemaUI() {
+        document.querySelectorAll('.theme-circle').forEach(el => el.classList.remove('active'));
+        const btn = document.getElementById('theme-btn-' + temaTemporario);
+        if(btn) btn.classList.add('active');
+    }
+
+    function salvarConfiguracoes() {
+        db.config.theme = temaTemporario;
+        db.config.reportHeader = document.getElementById('config-header').value.trim() || defaultHeader;
+        db.config.reportGoodMsg = document.getElementById('config-good-msg').value.trim() || defaultGoodMsg;
+        
+        save();
+        aplicarTema(db.config.theme);
+        fecharModais();
+    }
+
+    /* --- TUTORIAL --- */
+    function abrirAjuda() { document.getElementById('modal-help').style.display = 'flex'; }
+    function fecharAjuda() { 
+        const isFirstTime = !localStorage.getItem('behaviorcheck_help_seen');
+        document.getElementById('modal-help').style.display = 'none'; 
+        localStorage.setItem('behaviorcheck_help_seen', 'true');
+        
+        // Se for a primeira vez, abre as configurações logo em seguida
+        if(isFirstTime) {
+            abrirConfiguracoes();
+        }
+    }
+
+    /* --- RENDERIZAÇÃO DA TABELA --- */
+    function renderTable() {
+        const thead = document.getElementById('table-head');
+        const tbody = document.getElementById('table-body');
+        
+        let headHtml = `<tr><th>NOME DO ALUNO</th>`;
+        db.rules.forEach(rule => {
+            headHtml += `<th onclick="abrirVerRegra(${rule.id})"><div class="rule-header">${rule.sigla} <span class="material-icons" style="font-size:1rem;">info</span></div></th>`;
+        });
+        headHtml += `</tr>`;
+        thead.innerHTML = headHtml;
+
+        let bodyHtml = '';
+        if(db.students.length === 0) {
+            bodyHtml = `<tr><td colspan="${db.rules.length + 1}" style="padding: 30px; color: #999;">Nenhum aluno cadastrado. Use o botão + abaixo.</td></tr>`;
+        } else {
+            db.students.sort((a, b) => a.name.localeCompare(b.name)).forEach(student => {
+                bodyHtml += `<tr><td class="student-name-cell" onclick="abrirDashboardAluno(${student.id})">
+                                <span style="white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 180px;">${student.name}</span>
+                                <span class="material-icons">edit_note</span>
+                             </td>`;
+                
+                db.rules.forEach(rule => {
+                    const count = student.counts[rule.id] || 0;
+                    const cellClass = count > 0 ? 'cell-btn has-count' : 'cell-btn';
+                    const displayCount = count > 0 ? count : '';
+                    bodyHtml += `<td><button class="${cellClass}" onclick="incrementar(${student.id}, ${rule.id})">${displayCount}</button></td>`;
+                });
+                bodyHtml += `</tr>`;
+            });
+        }
+        tbody.innerHTML = bodyHtml;
+    }
+
+    /* --- LÓGICA DO DASHBOARD DO ALUNO --- */
+    function abrirDashboardAluno(id) {
+        currentStudentId = id;
+        const student = db.students.find(s => s.id == id);
+        if(!student) return;
+
+        document.getElementById('edit-aluno-nome').value = student.name;
+        renderDashboardRules();
+        document.getElementById('modal-dashboard-aluno').style.display = 'flex';
+    }
+
+    function renderDashboardRules() {
+        const student = db.students.find(s => s.id == currentStudentId);
+        const container = document.getElementById('dashboard-rules-list');
+        let html = '';
+
+        if(db.rules.length === 0) {
+            html = `<p style="text-align: center; color: #999; padding: 15px 0;">Nenhuma regra cadastrada.</p>`;
+        } else {
+            db.rules.forEach(rule => {
+                const count = student.counts[rule.id] || 0;
+                html += `
+                <div class="edit-count-row">
+                    <span style="font-size: 0.95rem; color: #333; flex: 1; padding-right: 10px;"><b>${rule.sigla}</b> - ${rule.rotulo}</span>
+                    <div class="edit-count-controls">
+                        <button class="btn-circle" onclick="ajustarContagem(${rule.id}, -1)">-</button>
+                        <span style="font-size: 1.2rem; font-weight: bold; width: 25px; text-align: center; color: var(--primary-dark);">${count}</span>
+                        <button class="btn-circle" onclick="ajustarContagem(${rule.id}, 1)">+</button>
+                    </div>
+                </div>`;
+            });
+        }
+        container.innerHTML = html;
+    }
+
+    function ajustarContagem(ruleId, delta) {
+        const student = db.students.find(s => s.id == currentStudentId);
+        if(!student.counts[ruleId]) student.counts[ruleId] = 0;
+        
+        student.counts[ruleId] += delta;
+        if(student.counts[ruleId] < 0) student.counts[ruleId] = 0;
+        
+        save();
+        renderTable(); 
+        renderDashboardRules(); 
+    }
+
+    function salvarNomeAluno() {
+        const newName = document.getElementById('edit-aluno-nome').value.trim().toUpperCase();
+        if(!newName) return;
+        const student = db.students.find(s => s.id == currentStudentId);
+        student.name = newName;
+        save();
+        renderTable();
+        alert("Nome atualizado!");
+    }
+
+    function excluirAlunoDoDashboard() {
+        if(confirm("Deseja excluir este aluno e todos os seus registros permanentemente?")) {
+            db.students = db.students.filter(s => s.id != currentStudentId);
+            save();
+            renderTable();
+            fecharModais();
+        }
+    }
+
+    function prepararRelatorioAluno() {
+        gerarRelatorioAluno(currentStudentId);
+    }
+
+    /* --- LÓGICA DE ADICIONAR ALUNOS EM MASSA --- */
+    function abrirModalAluno() {
+        document.getElementById('input-alunos').value = '';
+        document.getElementById('modal-aluno').style.display = 'flex';
+    }
+
+    function salvarAlunos() {
+        const raw = document.getElementById('input-alunos').value;
+        if(!raw.trim()) return;
+
+        const names = raw.split(',');
+        names.forEach(n => {
+            const cleanName = n.trim().toUpperCase();
+            if(cleanName) {
+                db.students.push({ id: Date.now() + Math.random(), name: cleanName, counts: {} });
+            }
+        });
+        
+        save();
+        fecharModais();
+        renderTable();
+    }
+
+    /* --- LÓGICA DE REGRAS --- */
+    function abrirModalRegra() {
+        document.getElementById('modal-regra-titulo').innerText = "Nova Regra";
+        document.getElementById('input-regra-id').value = '';
+        document.getElementById('input-regra-sigla').value = '';
+        document.getElementById('input-regra-rotulo').value = '';
+        document.getElementById('input-regra-desc').value = '';
+        document.getElementById('btn-delete-rule').style.display = 'none';
+        document.getElementById('modal-regra').style.display = 'flex';
+    }
+
+    function salvarRegra() {
+        const id = document.getElementById('input-regra-id').value;
+        const sigla = document.getElementById('input-regra-sigla').value.trim().toUpperCase();
+        const rotulo = document.getElementById('input-regra-rotulo').value.trim();
+        const desc = document.getElementById('input-regra-desc').value.trim();
+
+        if(!sigla || !rotulo) { alert("Sigla e Rótulo são obrigatórios!"); return; }
+
+        if(id) {
+            const rule = db.rules.find(r => r.id == id);
+            if(rule) { rule.sigla = sigla; rule.rotulo = rotulo; rule.desc = desc; }
+        } else {
+            db.rules.push({ id: Date.now(), sigla, rotulo, desc });
+        }
+
+        save();
+        fecharModais();
+        renderTable();
+    }
+
+    function abrirVerRegra(id) {
+        const rule = db.rules.find(r => r.id == id);
+        if(!rule) return;
+        currentRuleIdView = id;
+        document.getElementById('view-regra-sigla').innerText = "Sigla: " + rule.sigla;
+        document.getElementById('view-regra-rotulo').innerText = rule.rotulo;
+        document.getElementById('view-regra-desc').innerText = rule.desc || "Sem descrição operacional detalhada.";
+        document.getElementById('modal-ver-regra').style.display = 'flex';
+    }
+
+    function editarRegraAtual() {
+        const rule = db.rules.find(r => r.id == currentRuleIdView);
+        fecharModais();
+        document.getElementById('modal-regra-titulo').innerText = "Editar Regra";
+        document.getElementById('input-regra-id').value = rule.id;
+        document.getElementById('input-regra-sigla').value = rule.sigla;
+        document.getElementById('input-regra-rotulo').value = rule.rotulo;
+        document.getElementById('input-regra-desc').value = rule.desc;
+        document.getElementById('btn-delete-rule').style.display = 'flex'; 
+        document.getElementById('modal-regra').style.display = 'flex';
+    }
+
+    function excluirRegra() {
+        const id = document.getElementById('input-regra-id').value;
+        if(confirm("Excluir esta regra permanentemente? Isso removerá a contagem dela para todos os alunos.")) {
+            db.rules = db.rules.filter(r => r.id != id);
+            db.students.forEach(s => delete s.counts[id]);
+            save();
+            fecharModais();
+            renderTable();
+        }
+    }
+
+    /* --- CONTAGEM --- */
+    function incrementar(studentId, ruleId) {
+        const student = db.students.find(s => s.id == studentId);
+        if(!student) return;
+        if(!student.counts[ruleId]) student.counts[ruleId] = 0;
+        student.counts[ruleId]++;
+        save();
+        renderTable();
+    }
+
+    /* --- RELATÓRIOS --- */
+    function gerarRelatorioAluno(studentId) {
+        const student = db.students.find(s => s.id == studentId);
+        if(!student) return;
+
+        let baseHeader = db.config.reportHeader || defaultHeader;
+        let dataStr = new Date().toLocaleDateString('pt-BR');
+        
+        let text = baseHeader.replace(/\[ALUNO\]/g, student.name).replace(/\[DATA\]/g, dataStr) + "\n";
+        
+        let hasOccurrences = false;
+        db.rules.forEach(rule => {
+            const count = student.counts[rule.id] || 0;
+            if(count > 0) {
+                text += `• ${rule.rotulo}: ${count} vez(es)\n`;
+                hasOccurrences = true;
+            }
+        });
+
+        if(!hasOccurrences) {
+            text += (db.config.reportGoodMsg || defaultGoodMsg) + "\n";
+        }
+
+        document.getElementById('relatorio-titulo').innerText = "Relatório: " + student.name;
+        document.getElementById('report-text').value = text;
+        
+        const btn = document.getElementById('btn-copy-report');
+        btn.onclick = () => {
+            if(confirm(`⚠️ ATENÇÃO: Ao copiar este relatório, os registros de HOJE para ${student.name} serão ZERADOS. Continuar?`)) {
+                copiarTextoArea('report-text');
+                student.counts = {}; 
+                save();
+                renderTable();
+                fecharModais();
+            }
+        };
+
+        document.getElementById('modal-dashboard-aluno').style.display = 'none';
+        document.getElementById('modal-relatorio').style.display = 'flex';
+    }
+
+    function gerarRelatorioGeral() {
+        let text = `RELATÓRIO GERAL DA TURMA - BEHAVIOR CHECK\nDATA: ${new Date().toLocaleDateString('pt-BR')}\n\nNOME\t`;
+        db.rules.forEach(r => text += `${r.sigla}\t`);
+        text += `\n`;
+
+        db.students.sort((a, b) => a.name.localeCompare(b.name)).forEach(s => {
+            text += `${s.name}\t`;
+            db.rules.forEach(r => text += `${s.counts[r.id] || 0}\t`);
+            text += `\n`;
+        });
+
+        document.getElementById('relatorio-titulo').innerText = "Relatório Geral";
+        document.getElementById('report-text').value = text;
+        
+        const btn = document.getElementById('btn-copy-report');
+        btn.onclick = () => {
+            copiarTextoArea('report-text');
+            alert("Dados copiados! Cole no Excel.");
+            fecharModais();
+        };
+
+        document.getElementById('modal-relatorio').style.display = 'flex';
+    }
+
+    /* --- UTILITÁRIOS --- */
+    function fecharModais() { document.querySelectorAll('.modal-overlay').forEach(m => m.style.display = 'none'); }
+    function fecharRelatorio() { document.getElementById('modal-relatorio').style.display = 'none'; }
+    function copiarTextoArea(id) {
+        const copyText = document.getElementById(id);
+        copyText.select();
+        copyText.setSelectionRange(0, 99999);
+        document.execCommand("copy");
+    }
+    function resetGeral() {
+        if(confirm("🚨 PERIGO: Apagar TODOS alunos e regras? É irreversível.")) {
+            localStorage.removeItem('behaviorcheck_db');
+            localStorage.removeItem('behaviorcheck_help_seen');
+            location.reload();
+        }
+    }
+
+    init();
+</script>
+</body>
+</html>
